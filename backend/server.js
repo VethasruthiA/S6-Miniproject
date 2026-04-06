@@ -16,9 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: '*', // or leave empty for same origin
   credentials: true,
-  optionsSuccessStatus: 200
 }));
 
 // MongoDB Connection
@@ -60,6 +59,15 @@ app.use((err, req, res, next) => {
     message: 'Something went wrong!',
     error: err.message 
   });
+});
+const path = require('path');
+
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, 'frontend/build')));
+
+// Send all unmatched routes to React's index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
 });
 
 // 404 handler
