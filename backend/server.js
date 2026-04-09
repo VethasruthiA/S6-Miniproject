@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
+
 const authRoutes = require('./routes/auth');
 const billRoutes = require('./routes/bills');
 
@@ -10,26 +12,24 @@ dotenv.config();
 
 const app = express();
 
+// ================= MIDDLEWARE =================
+
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS
+// CORS (safe for deployment)
 app.use(cors({
-  origin: '*', // or leave empty for same origin
-  credentials: true,
+  origin: true,
+  credentials: true
 }));
 
-// MongoDB Connection
+// ================= DATABASE =================
+
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ MongoDB Connected Successfully');
-    console.log(`📦 Database: ${mongoose.connection.name}`);
-    console.log(`📍 Host: ${mongoose.connection.host}`);
   } catch (err) {
     console.error('❌ MongoDB Connection Error:', err.message);
     process.exit(1);
@@ -38,56 +38,59 @@ const connectDB = async () => {
 
 connectDB();
 
-// Routes
+// ================= ROUTES =================
+
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Green Resource Optimizer API',
-    status: 'running',
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+// Test route
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'API is running successfully'
   });
 });
 
-// Error handler
+// ================= FRONTEND =================
+
+// Serve React build
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// Handle all non-API routes (React routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
+});
+
+// ================= ERROR HANDLING =================
+
+// 404 handler (only for API if needed)
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API route not found'
+  });
+});
+
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     message: 'Something went wrong!',
-    error: err.message 
+    error: err.message
   });
 });
-const path = require('path');
 
-// Serve static files from React build
-app.use(express.static(path.join(__dirname, 'frontend/build')));
-
-// Send all unmatched routes to React's index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'Route not found' 
-  });
-});
+// ================= SERVER =================
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔗 http://localhost:${PORT}`);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  console.log('❌ Unhandled Rejection:', err.message);
-  // Close server & exit process
+  console.error('❌ Unhandled Rejection:', err.message);
   server.close(() => process.exit(1));
 });
