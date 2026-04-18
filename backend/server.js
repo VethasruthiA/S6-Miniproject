@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS (safe for deployment)
 app.use(cors({
-  origin: true,
+  origin: 'https://s6-miniproject-frontend.onrender.com',
   credentials: true
 }));
 
