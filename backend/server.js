@@ -7,11 +7,11 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const billRoutes = require('./routes/bills');
 
-console.log("MONGO_URI:", process.env.MONGO_URI);
+
 
 // Load env vars
 dotenv.config();
-
+console.log("MONGO_URI:", process.env.MONGO_URI);
 const app = express();
 
 // ================= MIDDLEWARE =================
