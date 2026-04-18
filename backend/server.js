@@ -11,6 +11,7 @@ const billRoutes = require('./routes/bills');
 
 // Load env vars
 dotenv.config();
+
 console.log("MONGO_URI:", process.env.MONGO_URI);
 const app = express();
 
